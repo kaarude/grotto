@@ -39,8 +39,8 @@ export async function initCommand(): Promise<void> {
 	const embedProvider = await p.select({
 		message: 'Embedding provider?',
 		options: [
-			{ value: 'ollama', label: 'Ollama (local, free, private)' },
-			{ value: 'openai', label: 'OpenAI-compatible API (BYOK)' },
+			{ value: 'openai', label: 'OpenAI-compatible API', hint: 'BYOK · recommended' },
+			{ value: 'ollama', label: 'Ollama', hint: 'local · free · private' },
 		],
 	});
 	if (p.isCancel(embedProvider)) {
@@ -58,8 +58,8 @@ export async function initCommand(): Promise<void> {
 	const llmProvider = await p.select({
 		message: 'Chat (LLM) provider?',
 		options: [
-			{ value: 'ollama', label: 'Ollama (local, free, private)' },
-			{ value: 'openai', label: 'OpenAI-compatible API (BYOK)' },
+			{ value: 'openai', label: 'OpenAI-compatible API', hint: 'BYOK · recommended' },
+			{ value: 'ollama', label: 'Ollama', hint: 'local · free · private' },
 		],
 	});
 	if (p.isCancel(llmProvider)) {
@@ -156,11 +156,20 @@ async function configureProvider(
 	});
 	if (p.isCancel(baseUrl)) return null;
 
-	const apiKey = await p.password({
-		message: 'API key?',
-		validate: (v) => (v ? undefined : 'Required'),
-	});
-	if (p.isCancel(apiKey)) return null;
+	// Prefer env var — never makes it onto disk that way.
+	const envKey = process.env.GROTTO_API_KEY ?? process.env.OPENAI_API_KEY;
+	let apiKey: string;
+	if (envKey) {
+		p.log.info(`Using API key from environment (${envKey.slice(0, 7)}…)`);
+		apiKey = envKey;
+	} else {
+		const entered = await p.password({
+			message: 'API key? (or set OPENAI_API_KEY / GROTTO_API_KEY in your shell)',
+			validate: (v) => (v ? undefined : 'Required'),
+		});
+		if (p.isCancel(entered)) return null;
+		apiKey = entered as string;
+	}
 
 	const model = await p.text({
 		message: `${kind} model?`,

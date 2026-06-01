@@ -44,8 +44,8 @@ export type GrottoConfig = z.infer<typeof ConfigSchema>;
 export const DEFAULT_CONFIG: GrottoConfig = {
 	version: 1,
 	notes: { paths: [], ignore: ['**/node_modules/**', '**/.git/**'] },
-	embed: { provider: 'ollama', model: 'nomic-embed-text', baseUrl: 'http://localhost:11434' },
-	llm: { provider: 'ollama', model: 'llama3.1:8b', baseUrl: 'http://localhost:11434' },
+	embed: { provider: 'openai', model: 'text-embedding-3-small' },
+	llm: { provider: 'openai', model: 'gpt-4o-mini' },
 	chat: { topK: 5, temperature: 0.3 },
 };
 

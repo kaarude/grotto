@@ -8,10 +8,14 @@ export function createEmbedProvider(config: GrottoConfig): EmbedProvider {
 	if (c.provider === 'ollama') {
 		return new OllamaEmbed(c.baseUrl);
 	}
-	if (!c.apiKey) {
-		throw new Error(`Embed provider "${c.provider}" requires an API key. Run \`grotto config\` to set it.`);
+	const apiKey = process.env.GROTTO_API_KEY ?? process.env.OPENAI_API_KEY ?? c.apiKey;
+	if (!apiKey) {
+		throw new Error(
+			`Embed provider "${c.provider}" requires an API key.\n` +
+				`Set GROTTO_API_KEY or OPENAI_API_KEY in your environment, or add apiKey to your config.`,
+		);
 	}
-	return new OpenAIEmbed(c.baseUrl, c.apiKey);
+	return new OpenAIEmbed(c.baseUrl, apiKey);
 }
 
 export type { EmbedProvider, EmbedOptions, EmbedResult } from './base.js';
