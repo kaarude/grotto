@@ -1,11 +1,5 @@
 import OpenAI from 'openai';
-import type {
-	LLMProvider,
-	Message,
-	ChatOptions,
-	ChatChunk,
-	ProviderInfo,
-} from './base.js';
+import type { LLMProvider, Message, ChatOptions, ChatChunk, ProviderInfo } from './base.js';
 
 /**
  * Works with any OpenAI-compatible API:

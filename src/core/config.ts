@@ -55,9 +55,7 @@ export function configExists(): boolean {
 
 export function loadConfig(): GrottoConfig {
 	if (!configExists()) {
-		throw new Error(
-			`No config found at ${paths.configFile}\nRun \`grotto init\` to get started.`,
-		);
+		throw new Error(`No config found at ${paths.configFile}\nRun \`grotto init\` to get started.`);
 	}
 	const raw = readFileSync(paths.configFile, 'utf-8');
 	const parsed = parse(raw);

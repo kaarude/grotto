@@ -23,11 +23,7 @@ const pkg = JSON.parse(readFileSync(join(__dirname, '..', '..', 'package.json'),
 
 const program = new Command();
 
-program
-	.name(BRAND.name)
-	.description(BRAND.tagline)
-	.version(pkg.version)
-	.showHelpAfterError();
+program.name(BRAND.name).description(BRAND.tagline).version(pkg.version).showHelpAfterError();
 
 program
 	.command('init')
@@ -45,10 +41,7 @@ program
 	.description('Start an interactive chat with your notes')
 	.action(chatCommand);
 
-program
-	.command('list')
-	.description('List indexed collections and stats')
-	.action(listCommand);
+program.command('list').description('List indexed collections and stats').action(listCommand);
 
 program
 	.command('web')
@@ -57,29 +50,18 @@ program
 	.option('--no-open', 'do not open the browser automatically')
 	.action((opts) => webCommand({ port: Number(opts.port), open: opts.open }));
 
-const configCmd = program
-	.command('config')
-	.description('View or edit configuration');
+const configCmd = program.command('config').description('View or edit configuration');
 
 configCmd
 	.command('show')
 	.description('Print current config (API keys masked)')
 	.action(configShowCommand);
 
-configCmd
-	.command('path')
-	.description('Print config file path')
-	.action(configPathCommand);
+configCmd.command('path').description('Print config file path').action(configPathCommand);
 
-configCmd
-	.command('edit')
-	.description('Open config in $EDITOR')
-	.action(configEditCommand);
+configCmd.command('edit').description('Open config in $EDITOR').action(configEditCommand);
 
-configCmd
-	.command('validate')
-	.description('Validate current config')
-	.action(configValidateCommand);
+configCmd.command('validate').description('Validate current config').action(configValidateCommand);
 
 // Friendly default: if no args, show welcome + help
 async function main(): Promise<void> {
@@ -89,9 +71,18 @@ async function main(): Promise<void> {
 		console.log();
 		if (!configExists() || !loadConfigSafe()) {
 			console.log(chalk.yellow('  Not configured yet.'));
-			console.log(chalk.gray('  Run ') + chalk.cyan('grotto init') + chalk.gray(' to get started.'));
+			console.log(
+				chalk.gray('  Run ') + chalk.cyan('grotto init') + chalk.gray(' to get started.'),
+			);
 		} else {
-			console.log(chalk.gray('  Try: ') + chalk.cyan('grotto add') + chalk.gray(' · ') + chalk.cyan('grotto chat') + chalk.gray(' · ') + chalk.cyan('grotto web'));
+			console.log(
+				chalk.gray('  Try: ') +
+					chalk.cyan('grotto add') +
+					chalk.gray(' · ') +
+					chalk.cyan('grotto chat') +
+					chalk.gray(' · ') +
+					chalk.cyan('grotto web'),
+			);
 		}
 		console.log();
 		program.help();

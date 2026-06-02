@@ -1,10 +1,5 @@
 import { Ollama } from 'ollama';
-import type {
-	EmbedProvider,
-	EmbedOptions,
-	EmbedResult,
-	EmbedProviderInfo,
-} from './base.js';
+import type { EmbedProvider, EmbedOptions, EmbedResult, EmbedProviderInfo } from './base.js';
 
 export class OllamaEmbed implements EmbedProvider {
 	readonly info: EmbedProviderInfo = {

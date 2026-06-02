@@ -1,11 +1,5 @@
 import { Ollama } from 'ollama';
-import type {
-	LLMProvider,
-	Message,
-	ChatOptions,
-	ChatChunk,
-	ProviderInfo,
-} from './base.js';
+import type { LLMProvider, Message, ChatOptions, ChatChunk, ProviderInfo } from './base.js';
 
 export class OllamaLLM implements LLMProvider {
 	readonly info: ProviderInfo = {

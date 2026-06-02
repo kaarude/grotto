@@ -1,10 +1,5 @@
 import OpenAI from 'openai';
-import type {
-	EmbedProvider,
-	EmbedOptions,
-	EmbedResult,
-	EmbedProviderInfo,
-} from './base.js';
+import type { EmbedProvider, EmbedOptions, EmbedResult, EmbedProviderInfo } from './base.js';
 
 export class OpenAIEmbed implements EmbedProvider {
 	readonly info: EmbedProviderInfo = {
@@ -23,11 +18,7 @@ export class OpenAIEmbed implements EmbedProvider {
 	async listModels(): Promise<string[]> {
 		// OpenAI doesn't have a public list-embeddings endpoint,
 		// so we hardcode the common ones and trust the user.
-		return [
-			'text-embedding-3-small',
-			'text-embedding-3-large',
-			'text-embedding-ada-002',
-		];
+		return ['text-embedding-3-small', 'text-embedding-3-large', 'text-embedding-ada-002'];
 	}
 
 	async embed(text: string, options: EmbedOptions): Promise<EmbedResult> {

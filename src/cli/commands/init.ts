@@ -90,10 +90,7 @@ export async function initCommand(): Promise<void> {
 	spinner.start('Validating connections…');
 	const llm = createLLMProvider(config);
 	const emb = createEmbedProvider(config);
-	const [llmRes, embRes] = await Promise.all([
-		llm.validateConnection(),
-		emb.validateConnection(),
-	]);
+	const [llmRes, embRes] = await Promise.all([llm.validateConnection(), emb.validateConnection()]);
 
 	if (!llmRes.ok || !embRes.ok) {
 		spinner.stop('Some connections failed');
@@ -108,8 +105,14 @@ export async function initCommand(): Promise<void> {
 		}
 	} else {
 		spinner.stop('All providers connected ✓');
-		if (llmRes.models) p.log.info(`LLM models: ${llmRes.models.slice(0, 5).join(', ')}${llmRes.models.length > 5 ? '…' : ''}`);
-		if (embRes.models) p.log.info(`Embed models: ${embRes.models.slice(0, 5).join(', ')}${embRes.models.length > 5 ? '…' : ''}`);
+		if (llmRes.models)
+			p.log.info(
+				`LLM models: ${llmRes.models.slice(0, 5).join(', ')}${llmRes.models.length > 5 ? '…' : ''}`,
+			);
+		if (embRes.models)
+			p.log.info(
+				`Embed models: ${embRes.models.slice(0, 5).join(', ')}${embRes.models.length > 5 ? '…' : ''}`,
+			);
 	}
 
 	// 6. Save
