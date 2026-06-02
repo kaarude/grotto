@@ -131,7 +131,7 @@ All providers are behind small interfaces. Adding a new backend = one file.
 ## Roadmap
 
 - [x] v0.1 — Foundation: config, providers (Ollama + OpenAI-compatible), CLI scaffold
-- [ ] v0.2 — `add`: walk, parse, chunk, embed, store in LanceDB
+- [x] v0.2 — `add`: walk, parse, chunk, embed, store in LanceDB
 - [ ] v0.3 — `chat`: retrieve + stream LLM (plain output)
 - [ ] v0.4 — Ink TUI for chat with source citations
 - [ ] v0.5 — Polish: watch mode, error handling, cross-platform testing
