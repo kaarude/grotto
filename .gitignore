@@ -32,3 +32,6 @@ yarn-error.log*
 
 # Grotto user data (never commit)
 .grotto/
+
+# Playwright CLI artifacts
+.playwright-cli/

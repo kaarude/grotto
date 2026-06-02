@@ -2,7 +2,7 @@ import { serve } from '@hono/node-server';
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createApp, buildDeps } from './index.js';
+import { createApp, buildLiveDeps } from './index.js';
 import { log } from '../util/logger.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -25,16 +25,24 @@ export interface StartOptions {
  *   the Vite proxy in vite.config.ts.
  */
 export async function startServer(opts: StartOptions): Promise<void> {
-	const deps = await buildDeps();
+	const live = await buildLiveDeps();
 
 	// Auto-detect prod vs dev: if dist/web/ exists, serve it; otherwise run in dev mode.
 	// From dist/server/start.js, we walk up to dist/ then into web/.
 	const candidate = join(__dirname, '..', 'web');
-	log.debug(`[start] static candidate: ${candidate} (exists=${existsSync(candidate)})`);
 	const staticDir = existsSync(candidate) ? candidate : undefined;
 	const dev = opts.dev ?? staticDir === undefined;
 
-	const app = createApp({ ...deps, staticDir }, { dev });
+	const app = createApp(
+		{
+			live,
+			staticDir,
+			onChange: (next) => {
+				log.dim(`  Model switched: ${next.llm.info.name} / ${next.config.llm.model}`);
+			},
+		},
+		{ dev },
+	);
 
 	serve(
 		{
@@ -45,8 +53,8 @@ export async function startServer(opts: StartOptions): Promise<void> {
 		(info) => {
 			const url = `http://${info.address === '::' ? 'localhost' : info.address}:${info.port}`;
 			log.success(`grotto web is running at ${url}`);
-			log.dim(`  Embedder: ${deps.config.embed.provider}/${deps.config.embed.model}`);
-			log.dim(`  LLM:      ${deps.config.llm.provider}/${deps.config.llm.model}`);
+			log.dim(`  Embedder: ${live.config.embed.provider}/${live.config.embed.model}`);
+			log.dim(`  LLM:      ${live.config.llm.provider}/${live.config.llm.model}`);
 			if (dev) {
 				log.dim(`  Dev mode: start the client with \`npm run dev:web\``);
 			}
