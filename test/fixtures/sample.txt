@@ -1,0 +1,3 @@
+This is a sample text file used for testing the text parser.
+It has a few lines.
+And a blank line between them.
