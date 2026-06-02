@@ -42,15 +42,19 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.5.0",
+    "@hono/node-server": "^2.0.4",
     "@lancedb/lancedb": "^0.30.0",
     "chalk": "^5.6.2",
     "commander": "^15.0.0",
+    "hono": "^4.12.23",
     "ignore": "^7.0.5",
     "markdown-it": "^14.2.0",
     "ollama": "^0.6.3",
     "openai": "^6.39.1",
     "ora": "^9.4.0",
     "pdf-parse": "^2.4.5",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "smol-toml": "^1.6.1",
     "zod": "^4.4.3"
   },
@@ -59,12 +63,16 @@
     "@types/markdown-it": "^14.1.2",
     "@types/node": "^25.9.1",
     "@types/pdf-parse": "^1.1.5",
+    "@types/react": "^19.2.16",
+    "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^8.60.0",
     "@typescript-eslint/parser": "^8.60.0",
+    "@vitejs/plugin-react": "^6.0.2",
     "eslint": "^10.4.1",
     "prettier": "^3.8.3",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
+    "vite": "^8.0.16",
     "vitest": "^4.1.8"
   }
 }
