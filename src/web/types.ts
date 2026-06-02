@@ -31,7 +31,13 @@ export interface SourcesResponse {
 }
 
 export type Theme = 'light' | 'dark';
-export type FontChoice = 'inter' | 'plex-sans' | 'pt-serif' | 'source-serif' | 'geist' | 'plex-mono';
+export type FontChoice =
+	| 'inter'
+	| 'plex-sans'
+	| 'pt-serif'
+	| 'source-serif'
+	| 'geist'
+	| 'plex-mono';
 
 export const FONT_CHOICES: { value: FontChoice; label: string; sample: string }[] = [
 	{ value: 'inter', label: 'Inter', sample: 'modern humanist sans' },

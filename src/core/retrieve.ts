@@ -45,11 +45,10 @@ export async function retrieve(
 	const vector = queryVec.vector;
 	if (!vector || vector.length === 0) return [];
 
-	const table = await store.table();
-	const rows = (await table
-		.vectorSearch(vector)
-		.limit(topK)
-		.toArray()) as (Chunk & { _distance: number })[];
+	const table = await store.prepareForSearch();
+	const rows = (await table.vectorSearch(vector).limit(topK).toArray()) as (Chunk & {
+		_distance: number;
+	})[];
 
 	return rows.map((row) => {
 		const { vector: _v, _distance, ...rest } = row;

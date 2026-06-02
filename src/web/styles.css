@@ -94,7 +94,9 @@ body {
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	font-feature-settings: 'ss01', 'cv11';
-	transition: background 150ms ease-out, color 150ms ease-out;
+	transition:
+		background 150ms ease-out,
+		color 150ms ease-out;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -186,7 +188,9 @@ code,
 	justify-content: center;
 	border-radius: 6px;
 	color: var(--ink-soft);
-	transition: background 120ms ease-out, color 120ms ease-out;
+	transition:
+		background 120ms ease-out,
+		color 120ms ease-out;
 }
 
 .icon-btn:hover {
@@ -248,7 +252,9 @@ code,
 	padding: 4px 8px;
 	border-radius: 4px;
 	cursor: pointer;
-	transition: background 120ms ease-out, border-color 120ms ease-out;
+	transition:
+		background 120ms ease-out,
+		border-color 120ms ease-out;
 	max-width: 320px;
 }
 
@@ -326,12 +332,16 @@ code,
 	gap: 8px;
 	padding: 8px 8px 8px 16px;
 	pointer-events: auto;
-	transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+	transition:
+		border-color 150ms ease-out,
+		box-shadow 150ms ease-out;
 }
 
 .prompt:focus-within {
 	border-color: var(--accent);
-	box-shadow: var(--shadow-prompt), 0 0 0 3px var(--accent-soft);
+	box-shadow:
+		var(--shadow-prompt),
+		0 0 0 3px var(--accent-soft);
 }
 
 .prompt textarea {
@@ -363,7 +373,9 @@ code,
 	background: var(--accent);
 	color: var(--accent-fg);
 	border-radius: 8px;
-	transition: background 120ms ease-out, transform 120ms ease-out;
+	transition:
+		background 120ms ease-out,
+		transform 120ms ease-out;
 }
 
 .send-btn:hover:not(:disabled) {
@@ -470,7 +482,9 @@ code,
 	text-align: left;
 	font-size: 14px;
 	cursor: pointer;
-	transition: border-color 120ms ease-out, background 120ms ease-out;
+	transition:
+		border-color 120ms ease-out,
+		background 120ms ease-out;
 }
 
 .font-option:hover {
@@ -503,7 +517,9 @@ code,
 	color: var(--ink);
 	font-size: 13px;
 	cursor: pointer;
-	transition: border-color 120ms ease-out, background 120ms ease-out;
+	transition:
+		border-color 120ms ease-out,
+		background 120ms ease-out;
 }
 
 .theme-option:hover {

@@ -73,8 +73,7 @@ function buildMessages(
 			: citations
 					.map(
 						(c, i) =>
-							`[${i + 1}] ${c.chunk.source} (chunk ${c.chunk.chunkIndex})\n` +
-							`${c.chunk.text}`,
+							`[${i + 1}] ${c.chunk.source} (chunk ${c.chunk.chunkIndex})\n` + `${c.chunk.text}`,
 					)
 					.join('\n\n');
 
@@ -83,9 +82,5 @@ function buildMessages(
 		`Question: ${question}\n\n` +
 		`Answer using the context above. Cite sources inline as [1], [2], etc., matching the numbers above.`;
 
-	return [
-		{ role: 'system', content: system },
-		...history,
-		{ role: 'user', content: userPrompt },
-	];
+	return [{ role: 'system', content: system }, ...history, { role: 'user', content: userPrompt }];
 }

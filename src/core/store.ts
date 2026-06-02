@@ -21,6 +21,8 @@ const TABLE_NAME = 'chunks';
  */
 export class Store {
 	private db: lancedb.Connection | null = null;
+	/** Cached flag: has the vector index been ensured on the chunks table? */
+	private vectorIndexEnsured = false;
 
 	async open(): Promise<lancedb.Connection> {
 		if (this.db) return this.db;
@@ -37,6 +39,37 @@ export class Store {
 		}
 		// Create empty table — schema will be inferred from the first batch.
 		return db.createTable(TABLE_NAME, []);
+	}
+
+	/**
+	 * Make sure the chunks table is open and has a vector index. Call this
+	 * before doing a vector search if you didn't go through upsert().
+	 */
+	async prepareForSearch(): Promise<lancedb.Table> {
+		const t = await this.table();
+		await this.ensureVectorIndex(t);
+		return t;
+	}
+
+	/**
+	 * Ensure a vector index exists on the `vector` column. Without one,
+	 * vectorSearch() throws ("No vector column found to match"). We only
+	 * do this once per Store instance — `createIndex` is idempotent enough
+	 * to be a no-op if the index already exists, but skipping avoids the
+	 * round-trip on every chat request.
+	 */
+	private async ensureVectorIndex(table: lancedb.Table): Promise<void> {
+		if (this.vectorIndexEnsured) return;
+		this.vectorIndexEnsured = true;
+		try {
+			const existing = await table.listIndices();
+			if (existing.some((idx) => idx.columns?.includes('vector'))) return;
+			await table.createIndex('vector');
+		} catch (err) {
+			// If indexing fails (e.g. too few rows for IVF-PQ), brute-force
+			// search still works. Just log and move on.
+			log.debug(`Vector index not created: ${err instanceof Error ? err.message : err}`);
+		}
 	}
 
 	async hasTable(): Promise<boolean> {
@@ -84,11 +117,13 @@ export class Store {
 		if (!exists) {
 			if (chunks.length === 0) return;
 			const db = await this.open();
-			await db.createTable(TABLE_NAME, chunks);
+			const t = await db.createTable(TABLE_NAME, chunks);
+			await this.ensureVectorIndex(t);
 			return;
 		}
 
 		const t = await this.table();
+		await this.ensureVectorIndex(t);
 
 		// 1. mergeInsert: update matching, insert new
 		if (chunks.length > 0) {
@@ -106,6 +141,7 @@ export class Store {
 
 	async close(): Promise<void> {
 		this.db = null;
+		this.vectorIndexEnsured = false;
 	}
 }
 

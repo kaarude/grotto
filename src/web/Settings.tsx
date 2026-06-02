@@ -37,11 +37,7 @@ export function Settings({ open, onClose }: Props) {
 				onClick={onClose}
 				aria-hidden="true"
 			/>
-			<aside
-				className={'sheet' + (open ? ' open' : '')}
-				aria-label="Settings"
-				aria-hidden={!open}
-			>
+			<aside className={'sheet' + (open ? ' open' : '')} aria-label="Settings" aria-hidden={!open}>
 				<h2>Settings</h2>
 
 				<div className="sheet-section">
@@ -127,8 +123,8 @@ function SourcesSummary({ sources }: { sources: SourcesResponse }) {
 	return (
 		<div className="config">
 			<div>
-				<strong>{sources.total}</strong> chunks across{' '}
-				<strong>{sources.sources.length}</strong> file{sources.sources.length === 1 ? '' : 's'}
+				<strong>{sources.total}</strong> chunks across <strong>{sources.sources.length}</strong>{' '}
+				file{sources.sources.length === 1 ? '' : 's'}
 			</div>
 			{sources.sources.slice(0, 8).map((s) => (
 				<div key={s.source} style={{ paddingLeft: 12 }}>

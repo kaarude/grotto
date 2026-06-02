@@ -1,6 +1,6 @@
 {
   "name": "grotto",
-  "version": "0.2.0",
+  "version": "0.6.0",
   "description": "Chat with your notes. Locally. Privately. For free.",
   "type": "module",
   "bin": {

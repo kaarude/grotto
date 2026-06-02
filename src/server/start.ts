@@ -28,12 +28,13 @@ export async function startServer(opts: StartOptions): Promise<void> {
 	const deps = await buildDeps();
 
 	// Auto-detect prod vs dev: if dist/web/ exists, serve it; otherwise run in dev mode.
-	const staticDir = existsSync(join(__dirname, '..', '..', 'web'))
-		? join(__dirname, '..', '..', 'web')
-		: undefined;
+	// From dist/server/start.js, we walk up to dist/ then into web/.
+	const candidate = join(__dirname, '..', 'web');
+	log.debug(`[start] static candidate: ${candidate} (exists=${existsSync(candidate)})`);
+	const staticDir = existsSync(candidate) ? candidate : undefined;
 	const dev = opts.dev ?? staticDir === undefined;
 
-	const app = createApp(deps, { dev });
+	const app = createApp({ ...deps, staticDir }, { dev });
 
 	serve(
 		{
@@ -51,7 +52,12 @@ export async function startServer(opts: StartOptions): Promise<void> {
 			}
 			if (opts.open) {
 				import('node:child_process').then(({ spawn }) => {
-					const cmd = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open';
+					const cmd =
+						process.platform === 'darwin'
+							? 'open'
+							: process.platform === 'win32'
+								? 'start'
+								: 'xdg-open';
 					spawn(cmd, [url], { stdio: 'ignore', detached: true }).unref();
 				});
 			}
