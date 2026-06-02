@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
-import { useConfig, useSources, useTheme, useFont } from './hooks.js';
-import { FONT_CHOICES } from './types.js';
-import type { MaskedConfig, SourcesResponse } from './types.js';
+import { useEffect, useState } from 'react';
+import { useConfig, useSources, useTheme, useFont, useModels } from './hooks.js';
+import { FONT_CHOICES, type MaskedConfig, type SourcesResponse, type FontChoice } from './types.js';
+import { Select } from './Select.js';
+import { ModelSection } from './ModelSection.js';
 
 interface Props {
 	open: boolean;
@@ -9,16 +10,21 @@ interface Props {
 }
 
 export function Settings({ open, onClose }: Props) {
-	const { config, error: configError } = useConfig();
+	const { config, error: configError, refresh: refreshConfig } = useConfig();
 	const { sources, error: sourcesError, refresh: refreshSources } = useSources();
 	const [theme, setTheme] = useTheme();
 	const [font, setFont] = useFont();
+	const { refresh: refreshModels } = useModels();
 
-	// Refresh sources whenever the sheet is opened — the user may have run
-	// `grotto add` in another terminal.
+	// Refresh everything whenever the sheet is opened. Cheap and ensures
+	// the user sees fresh state if they ran `grotto add` in another terminal.
 	useEffect(() => {
-		if (open) refreshSources();
-	}, [open, refreshSources]);
+		if (open) {
+			refreshConfig();
+			refreshSources();
+			refreshModels();
+		}
+	}, [open, refreshConfig, refreshSources, refreshModels]);
 
 	// Close on Escape.
 	useEffect(() => {
@@ -29,6 +35,12 @@ export function Settings({ open, onClose }: Props) {
 		window.addEventListener('keydown', handler);
 		return () => window.removeEventListener('keydown', handler);
 	}, [open, onClose]);
+
+	const fontOptions = FONT_CHOICES.map((f) => ({
+		value: f.value,
+		label: f.label,
+		sample: f.sample,
+	}));
 
 	return (
 		<>
@@ -42,18 +54,7 @@ export function Settings({ open, onClose }: Props) {
 
 				<div className="sheet-section">
 					<h3>Font</h3>
-					<div className="font-options">
-						{FONT_CHOICES.map((opt) => (
-							<button
-								key={opt.value}
-								className={'font-option' + (font === opt.value ? ' active' : '')}
-								onClick={() => setFont(opt.value)}
-							>
-								{opt.label}
-								<span className="sample">{opt.sample}</span>
-							</button>
-						))}
-					</div>
+					<Select<FontChoice> label="Font" options={fontOptions} value={font} onChange={setFont} />
 				</div>
 
 				<div className="sheet-section">
@@ -70,6 +71,17 @@ export function Settings({ open, onClose }: Props) {
 						))}
 					</div>
 				</div>
+
+				{config && (
+					<ModelSection
+						config={config}
+						onConfigChange={(next) => {
+							// After the server updates, refresh our view of the config.
+							refreshConfig();
+							void next;
+						}}
+					/>
+				)}
 
 				<div className="sheet-section">
 					<h3>Configuration</h3>

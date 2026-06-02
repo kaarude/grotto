@@ -1,7 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Prompt, type ChatTurn } from './Prompt.js';
 import { Conversation } from './Conversation.js';
 import { Settings } from './Settings.js';
+import { EmptyState } from './EmptyState.js';
 import { useConfig, useSources } from './hooks.js';
 import type { Citation } from './types.js';
 
@@ -9,8 +10,10 @@ export function App() {
 	const [turns, setTurns] = useState<ChatTurn[]>([]);
 	const [streaming, setStreaming] = useState(false);
 	const [settingsOpen, setSettingsOpen] = useState(false);
-	const { sources, error: sourcesError, refresh: refreshSources } = useSources();
-	const { error: configError } = useConfig();
+	const [seedPrompt, setSeedPrompt] = useState<string | null>(null);
+	const { refresh: refreshSources } = useSources();
+	const { refresh: refreshConfig } = useConfig();
+	const promptRef = useRef<HTMLTextAreaElement | null>(null);
 
 	const handleSend = useCallback(
 		async (question: string) => {
@@ -57,8 +60,6 @@ export function App() {
 							);
 						} else if (evt.event === 'done') {
 							setTurns((prev) => prev.map((t) => (t.id === id ? { ...t, streaming: false } : t)));
-							// New chunks may have been embedded (no — chat is read-only, but
-							// sources may have changed if the user is iterating).
 							refreshSources();
 						} else if (evt.event === 'error') {
 							const { error } = JSON.parse(evt.data) as { error: string };
@@ -82,6 +83,12 @@ export function App() {
 
 	const showEmpty = turns.length === 0;
 
+	function handlePickPrompt(prompt: string) {
+		setSeedPrompt(prompt);
+		// Focus the prompt after React re-renders.
+		setTimeout(() => promptRef.current?.focus(), 0);
+	}
+
 	return (
 		<div className="page">
 			<header className="header">
@@ -103,46 +110,16 @@ export function App() {
 				</div>
 			</header>
 
-			{showEmpty ? <EmptyState /> : <Conversation turns={turns} />}
+			{showEmpty ? <EmptyState onPickPrompt={handlePickPrompt} /> : <Conversation turns={turns} />}
 
-			<Prompt onSend={handleSend} streaming={streaming} />
+			<Prompt
+				onSend={handleSend}
+				streaming={streaming}
+				seed={seedPrompt}
+				onSeedConsumed={() => setSeedPrompt(null)}
+				textareaRef={promptRef}
+			/>
 			<Settings open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-		</div>
-	);
-}
-
-function EmptyState() {
-	const { sources, error } = useSources();
-	const { error: configError } = useConfig();
-	const hasNotes = sources && sources.total > 0;
-	return (
-		<div className="empty">
-			<h1>Ask your notes anything</h1>
-			<p>
-				grotto is a local assistant. It reads from your indexed notes and answers with citations
-				back to the source.
-			</p>
-			{configError ? (
-				<p>
-					<strong>No config found.</strong> Run <code>grotto init</code> in your terminal to get
-					started.
-				</p>
-			) : error ? (
-				<p>Could not reach the grotto server: {error}</p>
-			) : hasNotes ? (
-				<p>
-					<strong>{sources!.total}</strong> chunks from <strong>{sources!.sources.length}</strong>{' '}
-					file
-					{sources!.sources.length === 1 ? '' : 's'} ready to search.
-				</p>
-			) : (
-				<p>
-					No notes indexed yet. Run <code>grotto add</code> in your terminal.
-				</p>
-			)}
-			<p className="meta">
-				Press <code>⏎</code> to send · <code>Shift+⏎</code> for newline · <code>⌘K</code> to focus
-			</p>
 		</div>
 	);
 }

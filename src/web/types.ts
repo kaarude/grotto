@@ -7,7 +7,7 @@ export interface MaskedConfig {
 	version: number;
 	notes: { paths: string[]; ignore: string[] };
 	embed: { provider: string; model: string; baseUrl?: string; apiKey?: string };
-	llm: { provider: string; model: string; baseUrl?: string; apiKey?: string };
+	llm: { provider: 'ollama' | 'openai'; model: string; baseUrl?: string; apiKey?: string };
 	chat: { topK: number; temperature: number; systemPrompt?: string };
 }
 
@@ -46,4 +46,37 @@ export const FONT_CHOICES: { value: FontChoice; label: string; sample: string }[
 	{ value: 'source-serif', label: 'Source Serif 4', sample: 'modern editorial' },
 	{ value: 'geist', label: 'Geist', sample: 'Vercel default' },
 	{ value: 'plex-mono', label: 'IBM Plex Mono', sample: 'monospace everything' },
+];
+
+export interface ModelsResponse {
+	models: string[];
+	source: 'provider' | 'fallback';
+}
+
+/**
+ * Placeholder prompts shown on the empty state. Designed for grotto's job:
+ * chat with your local notes. Each is a verb-led action, not a question.
+ * Clicking one fills the prompt bar so the user can edit before sending.
+ */
+export const PLACEHOLDER_PROMPTS: { label: string; prompt: string; description: string }[] = [
+	{
+		label: 'Summarize',
+		prompt: 'Summarize the most important points from my recent notes.',
+		description: 'A quick read-back of what you wrote.',
+	},
+	{
+		label: 'Find a quote',
+		prompt: 'Find a quote I saved about ',
+		description: 'Search for something you said or read.',
+	},
+	{
+		label: 'Compare two',
+		prompt: 'Compare the arguments in my notes about ',
+		description: 'Two takes, side by side.',
+	},
+	{
+		label: 'What did I decide',
+		prompt: 'What did I decide about ',
+		description: 'Pull a decision out of the noise.',
+	},
 ];

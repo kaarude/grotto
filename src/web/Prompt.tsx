@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, FormEvent, KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, FormEvent, KeyboardEvent, RefObject } from 'react';
 import type { Citation } from './types.js';
 
 export interface ChatTurn {
@@ -12,11 +12,27 @@ export interface ChatTurn {
 interface Props {
 	onSend: (question: string) => Promise<void>;
 	streaming: boolean;
+	/**
+	 * If set, the textarea gets seeded with this value (replacing whatever
+	 * the user had typed). The parent should clear this via onSeedConsumed
+	 * once the seed has been applied.
+	 */
+	seed?: string | null;
+	onSeedConsumed?: () => void;
+	/** Optional ref handle so parents can focus the textarea (e.g. from a prompt chip). */
+	textareaRef?: RefObject<HTMLTextAreaElement | null>;
 }
 
-export function Prompt({ onSend, streaming }: Props) {
+export function Prompt({
+	onSend,
+	streaming,
+	seed,
+	onSeedConsumed,
+	textareaRef: externalRef,
+}: Props) {
 	const [value, setValue] = useState('');
-	const textareaRef = useRef<HTMLTextAreaElement>(null);
+	const internalRef = useRef<HTMLTextAreaElement>(null);
+	const textareaRef = externalRef ?? internalRef;
 
 	// Auto-grow the textarea up to its max-height.
 	useEffect(() => {
@@ -24,7 +40,15 @@ export function Prompt({ onSend, streaming }: Props) {
 		if (!el) return;
 		el.style.height = 'auto';
 		el.style.height = Math.min(el.scrollHeight, 200) + 'px';
-	}, [value]);
+	}, [value, textareaRef]);
+
+	// Apply a seed prompt when the parent sets one.
+	useEffect(() => {
+		if (seed != null) {
+			setValue(seed);
+			onSeedConsumed?.();
+		}
+	}, [seed, onSeedConsumed]);
 
 	// Global ⌘K / Ctrl-K to focus the prompt.
 	useEffect(() => {
@@ -36,7 +60,7 @@ export function Prompt({ onSend, streaming }: Props) {
 		};
 		window.addEventListener('keydown', handler);
 		return () => window.removeEventListener('keydown', handler);
-	}, []);
+	}, [textareaRef]);
 
 	const submit = (e?: FormEvent) => {
 		e?.preventDefault();

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import type { MaskedConfig, SourcesResponse, Theme, FontChoice } from './types.js';
+import type { MaskedConfig, ModelsResponse, SourcesResponse, Theme, FontChoice } from './types.js';
 
 const STORAGE_THEME = 'grotto.theme';
 const STORAGE_FONT = 'grotto.font';
@@ -58,13 +58,16 @@ export function useFont(): [FontChoice, (f: FontChoice) => void] {
 export function useConfig() {
 	const [config, setConfig] = useState<MaskedConfig | null>(null);
 	const [error, setError] = useState<string | null>(null);
-	useEffect(() => {
+	const refresh = useCallback(() => {
 		fetch('/api/config')
 			.then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
 			.then(setConfig)
 			.catch((e) => setError(e instanceof Error ? e.message : String(e)));
 	}, []);
-	return { config, error };
+	useEffect(() => {
+		refresh();
+	}, [refresh]);
+	return { config, error, refresh };
 }
 
 export function useSources() {
@@ -80,4 +83,41 @@ export function useSources() {
 		refresh();
 	}, [refresh]);
 	return { sources, error, refresh };
+}
+
+export function useModels() {
+	const [models, setModels] = useState<ModelsResponse | null>(null);
+	const [error, setError] = useState<string | null>(null);
+	const refresh = useCallback(() => {
+		fetch('/api/llm/models')
+			.then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+			.then(setModels)
+			.catch((e) => setError(e instanceof Error ? e.message : String(e)));
+	}, []);
+	useEffect(() => {
+		refresh();
+	}, [refresh]);
+	return { models, error, refresh };
+}
+
+/**
+ * Patch the LLM model + baseUrl on the server. Returns the new masked
+ * config on success, or an error string.
+ */
+export async function updateLlm(patch: {
+	model?: string;
+	baseUrl?: string | null;
+}): Promise<{ ok: true; config: MaskedConfig } | { ok: false; error: string }> {
+	const res = await fetch('/api/config/llm', {
+		method: 'PATCH',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(patch),
+	});
+	const data = (await res.json().catch(() => ({}))) as
+		| { error?: string; config?: MaskedConfig }
+		| Record<string, unknown>;
+	if (!res.ok) {
+		return { ok: false, error: (data as { error?: string }).error ?? `HTTP ${res.status}` };
+	}
+	return { ok: true, config: (data as { config: MaskedConfig }).config };
 }
