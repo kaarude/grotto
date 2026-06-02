@@ -42,17 +42,23 @@
   },
   "dependencies": {
     "@clack/prompts": "^1.5.0",
+    "@lancedb/lancedb": "^0.30.0",
     "chalk": "^5.6.2",
     "commander": "^15.0.0",
+    "ignore": "^7.0.5",
+    "markdown-it": "^14.2.0",
     "ollama": "^0.6.3",
     "openai": "^6.39.1",
     "ora": "^9.4.0",
+    "pdf-parse": "^2.4.5",
     "smol-toml": "^1.6.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/commander": "^2.12.0",
+    "@types/markdown-it": "^14.1.2",
     "@types/node": "^25.9.1",
+    "@types/pdf-parse": "^1.1.5",
     "@typescript-eslint/eslint-plugin": "^8.60.0",
     "@typescript-eslint/parser": "^8.60.0",
     "eslint": "^10.4.1",
