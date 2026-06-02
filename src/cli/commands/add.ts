@@ -1,16 +1,31 @@
 import chalk from 'chalk';
+import { loadConfig } from '../../core/config.js';
+import { createEmbedProvider } from '../../providers/embed/index.js';
+import { ingest } from '../../core/ingest.js';
+import { log } from '../../util/logger.js';
 
-/**
- * Stub for now. Day 2 will:
- *   1. Walk config.notes.paths (with ignore patterns)
- *   2. Detect file type → parser
- *   3. Chunk
- *   4. Embed (batched, with progress)
- *   5. Write to LanceDB
- */
 export async function addCommand(opts: { path?: string; watch?: boolean }): Promise<void> {
-	console.log(chalk.yellow('⚠ add is not implemented yet — coming in the next build.'));
-	console.log(chalk.gray('  Plan: walk folder → parse → chunk → embed → store in LanceDB.'));
-	if (opts.path) console.log(chalk.gray(`  Would scan: ${opts.path}`));
-	if (opts.watch) console.log(chalk.gray('  Would watch for changes.'));
+	const config = loadConfig();
+
+	const providerName = config.embed.provider;
+	const model = config.embed.model;
+	log.dim(`Using embedder: ${providerName}/${model}`);
+
+	const embedder = createEmbedProvider(config);
+
+	try {
+		const result = await ingest(config, embedder, { path: opts.path });
+		console.log();
+		log.success(
+			`Done. ${result.chunks} chunks from ${result.filesIndexed} file${result.filesIndexed === 1 ? '' : 's'} ` +
+				`(${result.filesSkipped} unchanged, ${result.filesFailed} failed).`,
+		);
+		if (result.filesIndexed > 0) {
+			console.log(chalk.gray('  Next: ') + chalk.cyan('grotto chat'));
+		}
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		log.error(msg);
+		process.exit(1);
+	}
 }
