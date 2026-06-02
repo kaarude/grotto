@@ -128,28 +128,6 @@ src/
 
 All providers are behind small interfaces. Adding a new backend = one file.
 
-## Roadmap
-
-- [x] v0.1 — Foundation: config, providers (Ollama + OpenAI-compatible), CLI scaffold
-- [x] v0.2 — `add`: walk, parse, chunk, embed, store in LanceDB
-- [ ] v0.3 — `chat`: retrieve + stream LLM (plain output)
-- [ ] v0.4 — Ink TUI for chat with source citations
-- [ ] v0.5 — Polish: watch mode, error handling, cross-platform testing
-- [ ] v0.6 — Web UI (Svelte)
-- [ ] v0.7 — More parsers (DOCX, code files)
-- [ ] v0.8 — Anthropic native support
-- [ ] v1.0 — Stable API, plugin system
-
-## Before publishing to GitHub
-
-A few things to update once you push:
-
-- [ ] `package.json` → `repository.url` (change `USER` to your GitHub handle)
-- [ ] `package.json` → `author`, `bugs`, `homepage` fields
-- [ ] `README.md` → replace `docs/demo.gif` with your actual demo
-- [ ] `README.md` → swap the `USER/grotto` link at the bottom
-- [ ] `.github/workflows/ci.yml` → add any extra jobs (e.g., release on tag)
-
 ## License
 
 MIT — see [LICENSE](./LICENSE).
