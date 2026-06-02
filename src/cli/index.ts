@@ -47,8 +47,9 @@ program
 	.command('web')
 	.description('Open the local web UI')
 	.option('-p, --port <port>', 'port to serve on', '4737')
+	.option('-H, --host <host>', 'host to bind to (use 0.0.0.0 for Docker)', '127.0.0.1')
 	.option('--no-open', 'do not open the browser automatically')
-	.action((opts) => webCommand({ port: Number(opts.port), open: opts.open }));
+	.action((opts) => webCommand({ port: Number(opts.port), host: opts.host, open: opts.open }));
 
 const configCmd = program.command('config').description('View or edit configuration');
 
