@@ -44,6 +44,7 @@
     "url": "git+https://github.com/USER/grotto.git"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.100.1",
     "@clack/prompts": "^1.5.0",
     "@hono/node-server": "^2.0.4",
     "@lancedb/lancedb": "^0.30.0",

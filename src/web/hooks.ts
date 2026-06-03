@@ -101,10 +101,11 @@ export function useModels() {
 }
 
 /**
- * Patch the LLM model + baseUrl on the server. Returns the new masked
- * config on success, or an error string.
+ * Patch the LLM provider/model/baseUrl on the server. Returns the new
+ * masked config on success, or an error string.
  */
 export async function updateLlm(patch: {
+	provider?: string;
 	model?: string;
 	baseUrl?: string | null;
 }): Promise<{ ok: true; config: MaskedConfig } | { ok: false; error: string }> {

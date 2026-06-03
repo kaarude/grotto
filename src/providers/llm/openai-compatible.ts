@@ -1,26 +1,35 @@
 import OpenAI from 'openai';
 import type { LLMProvider, Message, ChatOptions, ChatChunk, ProviderInfo } from './base.js';
+import type { LlmPreset } from '../presets.js';
 
 /**
- * Works with any OpenAI-compatible API:
- *   - OpenAI  (https://api.openai.com/v1)
- *   - OpenRouter (https://openrouter.ai/api/v1)
- *   - Groq, Together, Fireworks, Mistral, LM Studio, llama.cpp server, etc.
+ * Works with any OpenAI-compatible chat API.
+ *
+ * All the named providers that speak the OpenAI protocol (OpenRouter,
+ * Groq, Together, Mistral, xAI, DeepSeek, Fireworks, Perplexity,
+ * Cohere's compat endpoint, LM Studio, llama.cpp, vLLM, etc.) get
+ * their baseUrl, default model, curated list, and extra headers from
+ * a preset. The actual class is the same — there's nothing
+ * provider-specific about how it talks to them.
  */
 export class OpenAICompatibleLLM implements LLMProvider {
-	readonly info: ProviderInfo = {
-		name: 'openai',
-		displayName: 'OpenAI-compatible',
-		defaultModel: 'gpt-4o-mini',
-		requiresApiKey: true,
-	};
-
+	readonly info: ProviderInfo;
 	private client: OpenAI;
+	private preset: LlmPreset;
 
-	constructor(baseUrl: string | undefined, apiKey: string) {
+	constructor(preset: LlmPreset, baseUrl: string | undefined, apiKey: string) {
+		this.preset = preset;
+		this.info = {
+			name: preset.name,
+			displayName: preset.displayName,
+			defaultModel: preset.defaultLlmModel,
+			defaultBaseUrl: preset.defaultBaseUrl,
+			requiresApiKey: preset.requiresApiKey,
+		};
 		this.client = new OpenAI({
 			apiKey,
-			baseURL: baseUrl,
+			baseURL: baseUrl ?? preset.defaultBaseUrl,
+			defaultHeaders: preset.extraHeaders,
 		});
 	}
 
@@ -56,9 +65,16 @@ export class OpenAICompatibleLLM implements LLMProvider {
 	async validateConnection(): Promise<{ ok: boolean; error?: string; models?: string[] }> {
 		try {
 			const models = await this.listModels();
-			return { ok: true, models: models.slice(0, 10) };
+			return { ok: true, models };
 		} catch (err) {
 			const msg = err instanceof Error ? err.message : String(err);
+			// Bad keys are a special case — explain it clearly.
+			if (/401|403|unauthor/i.test(msg)) {
+				return {
+					ok: false,
+					error: `Authentication failed. Check your API key for ${this.info.displayName}.`,
+				};
+			}
 			return { ok: false, error: msg };
 		}
 	}

@@ -9,6 +9,7 @@ import type { LLMProvider } from '../providers/llm/base.js';
 import { chat, type ChatResult } from '../core/chat.js';
 import { loadConfigSafe, maskConfig } from '../core/config.js';
 import { log } from '../util/logger.js';
+import { LLM_PRESETS } from '../providers/presets.js';
 
 /**
  * Live, mutable references to the providers and config. The web UI's model
@@ -116,18 +117,19 @@ export function createApp(deps: ServerDeps, options: CreateAppOptions = {}): Hon
 		const body = (await c.req.json().catch(() => null)) as {
 			model?: string;
 			baseUrl?: string | null;
-			provider?: 'ollama' | 'openai';
+			provider?: string;
 		} | null;
 		if (!body) return c.json({ error: 'invalid body' }, 400);
 
 		// Build a tentative new config. Provider is the existing one unless
-		// explicitly overridden (changing provider is rare; model is what
-		// users tweak constantly).
+		// explicitly overridden. The cast widens the JSON body string to
+		// the schema's provider union — createLLMProvider will reject any
+		// name it doesn't recognize.
 		const next: GrottoConfig = {
 			...live.config,
 			llm: {
 				...live.config.llm,
-				provider: body.provider ?? live.config.llm.provider,
+				provider: (body.provider ?? live.config.llm.provider) as GrottoConfig['llm']['provider'],
 				model: (body.model ?? live.config.llm.model).trim(),
 				baseUrl:
 					body.baseUrl === null ? undefined : body.baseUrl?.trim() || live.config.llm.baseUrl,
@@ -190,23 +192,11 @@ export function createApp(deps: ServerDeps, options: CreateAppOptions = {}): Hon
 
 /**
  * Curated model fallback. Used when the provider's /models endpoint fails
- * (Ollama down, network error, etc.). Keep the list short \u2014 these are
- * reasonable defaults, not a catalog.
+ * (network down, auth missing, etc.). Sourced from the LLM presets so
+ * it stays in sync with what grotto actually supports.
  */
-function curatedModelsFor(provider: 'ollama' | 'openai'): string[] {
-	if (provider === 'ollama') {
-		return ['llama3.1:8b', 'llama3.1:70b', 'qwen2.5:7b', 'mistral:7b', 'gemma2:9b'];
-	}
-	return [
-		'gpt-4o-mini',
-		'gpt-4o',
-		'gpt-4.1',
-		'gpt-4.1-mini',
-		'o4-mini',
-		'o3',
-		'claude-3-5-sonnet-latest',
-		'claude-3-5-haiku-latest',
-	];
+function curatedModelsFor(provider: string): string[] {
+	return LLM_PRESETS[provider]?.curatedModels ?? ['gpt-4o-mini'];
 }
 
 /**

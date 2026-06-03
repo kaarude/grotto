@@ -6,6 +6,12 @@ import { saveConfig, type GrottoConfig } from '../../core/config.js';
 import { paths, ensureDirs } from '../../util/paths.js';
 import { createLLMProvider } from '../../providers/llm/index.js';
 import { createEmbedProvider } from '../../providers/embed/index.js';
+import {
+	LLM_PRESETS,
+	EMBED_PRESETS,
+	LLM_PROVIDER_ORDER,
+	EMBED_PROVIDER_ORDER,
+} from '../../providers/presets.js';
 
 function expandPath(p: string): string {
 	if (p.startsWith('~')) return homedir() + p.slice(1);
@@ -38,17 +44,15 @@ export async function initCommand(): Promise<void> {
 	// 2. Embedding provider
 	const embedProvider = await p.select({
 		message: 'Embedding provider?',
-		options: [
-			{ value: 'openai', label: 'OpenAI-compatible API', hint: 'BYOK · recommended' },
-			{ value: 'ollama', label: 'Ollama', hint: 'local · free · private' },
-		],
+		options: embedProviderOptions(),
+		initialValue: 'openai',
 	});
 	if (p.isCancel(embedProvider)) {
 		p.cancel('Setup cancelled.');
 		process.exit(0);
 	}
 
-	const embedConfig = await configureProvider(embedProvider, 'embedding');
+	const embedConfig = await configureEmbedProvider(embedProvider as string);
 	if (!embedConfig) {
 		p.cancel('Setup cancelled.');
 		process.exit(0);
@@ -57,17 +61,15 @@ export async function initCommand(): Promise<void> {
 	// 3. LLM provider
 	const llmProvider = await p.select({
 		message: 'Chat (LLM) provider?',
-		options: [
-			{ value: 'openai', label: 'OpenAI-compatible API', hint: 'BYOK · recommended' },
-			{ value: 'ollama', label: 'Ollama', hint: 'local · free · private' },
-		],
+		options: llmProviderOptions(),
+		initialValue: 'openai',
 	});
 	if (p.isCancel(llmProvider)) {
 		p.cancel('Setup cancelled.');
 		process.exit(0);
 	}
 
-	const llmConfig = await configureProvider(llmProvider, 'chat');
+	const llmConfig = await configureLlmProvider(llmProvider as string);
 	if (!llmConfig) {
 		p.cancel('Setup cancelled.');
 		process.exit(0);
@@ -124,50 +126,87 @@ export async function initCommand(): Promise<void> {
 	);
 }
 
-async function configureProvider(
-	provider: 'ollama' | 'openai',
-	kind: 'embedding' | 'chat',
-): Promise<GrottoConfig['embed'] | GrottoConfig['llm'] | null> {
-	if (provider === 'ollama') {
+/**
+ * Build the option list for the LLM provider picker. Group similar
+ * providers visually with `hint`s, ordered by popularity.
+ */
+function llmProviderOptions(): { value: string; label: string; hint?: string }[] {
+	return LLM_PROVIDER_ORDER.filter((n) => LLM_PRESETS[n]).map((name) => {
+		const preset = LLM_PRESETS[name]!;
+		return {
+			value: name,
+			label: preset.displayName,
+			hint: preset.hint,
+		};
+	});
+}
+
+function embedProviderOptions(): { value: string; label: string; hint?: string }[] {
+	return EMBED_PROVIDER_ORDER.filter((n) => EMBED_PRESETS[n]).map((name) => {
+		const preset = EMBED_PRESETS[name]!;
+		return {
+			value: name,
+			label: preset.displayName,
+			hint: preset.hint,
+		};
+	});
+}
+
+/**
+ * Walk the user through whatever fields the chosen provider needs.
+ *
+ * For local providers (Ollama, LM Studio, llama.cpp), we ask for the
+ * base URL and skip the API key.
+ * For cloud providers with a known default model, we ask for the model
+ * (pre-filled), an optional base URL (the preset default is used if
+ * blank), and an API key (pre-filled from env if present).
+ * For the generic "openai-compatible" we ask for both base URL and key.
+ */
+async function configureLlmProvider(provider: string): Promise<GrottoConfig['llm'] | null> {
+	const preset = LLM_PRESETS[provider];
+	if (!preset) {
+		p.log.error(`Unknown LLM provider: ${provider}`);
+		process.exit(1);
+	}
+
+	// Local / no-key providers.
+	if (!preset.requiresApiKey) {
 		const baseUrl = await p.text({
-			message: 'Ollama base URL?',
-			placeholder: 'http://localhost:11434',
-			initialValue: 'http://localhost:11434',
+			message: `${preset.displayName} base URL?`,
+			placeholder: preset.defaultBaseUrl,
+			initialValue: preset.defaultBaseUrl,
 			validate: (v) => (v?.startsWith('http') ? undefined : 'Must start with http(s)://'),
 		});
 		if (p.isCancel(baseUrl)) return null;
-
 		const model = await p.text({
-			message: `${kind} model?`,
-			placeholder: kind === 'embedding' ? 'nomic-embed-text' : 'llama3.1:8b',
-			initialValue: kind === 'embedding' ? 'nomic-embed-text' : 'llama3.1:8b',
+			message: 'Model?',
+			placeholder: preset.defaultLlmModel,
+			initialValue: preset.defaultLlmModel,
 		});
 		if (p.isCancel(model)) return null;
-
 		return {
-			provider: 'ollama',
+			provider: provider as GrottoConfig['llm']['provider'],
 			model: model as string,
 			baseUrl: baseUrl as string,
 		};
 	}
 
-	// openai-compatible
+	// Cloud / key-required providers.
 	const baseUrl = await p.text({
-		message: 'API base URL? (leave empty for OpenAI)',
-		placeholder: 'https://api.openai.com/v1',
-		validate: () => undefined, // optional
+		message: 'API base URL? (leave empty for default)',
+		placeholder: preset.defaultBaseUrl ?? 'https://...',
+		validate: () => undefined,
 	});
 	if (p.isCancel(baseUrl)) return null;
 
-	// Prefer env var — never makes it onto disk that way.
-	const envKey = process.env.GROTTO_API_KEY ?? process.env.OPENAI_API_KEY;
+	const envKey = pickEnvKey(preset.envVars);
 	let apiKey: string;
 	if (envKey) {
 		p.log.info(`Using API key from environment (${envKey.slice(0, 7)}…)`);
 		apiKey = envKey;
 	} else {
 		const entered = await p.password({
-			message: 'API key? (or set OPENAI_API_KEY / GROTTO_API_KEY in your shell)',
+			message: `API key for ${preset.displayName}? (or set ${preset.envVars?.[0] ?? 'GROTTO_API_KEY'} in your shell)`,
 			validate: (v) => (v ? undefined : 'Required'),
 		});
 		if (p.isCancel(entered)) return null;
@@ -175,16 +214,91 @@ async function configureProvider(
 	}
 
 	const model = await p.text({
-		message: `${kind} model?`,
-		placeholder: kind === 'embedding' ? 'text-embedding-3-small' : 'gpt-4o-mini',
-		initialValue: kind === 'embedding' ? 'text-embedding-3-small' : 'gpt-4o-mini',
+		message: 'Model?',
+		placeholder: preset.defaultLlmModel,
+		initialValue: preset.defaultLlmModel,
 	});
 	if (p.isCancel(model)) return null;
 
 	return {
-		provider: 'openai',
+		provider: provider as GrottoConfig['llm']['provider'],
 		model: model as string,
 		baseUrl: (baseUrl as string) || undefined,
-		apiKey: apiKey as string,
+		apiKey,
 	};
+}
+
+async function configureEmbedProvider(provider: string): Promise<GrottoConfig['embed'] | null> {
+	const preset = EMBED_PRESETS[provider];
+	if (!preset) {
+		p.log.error(`Unknown embed provider: ${provider}`);
+		process.exit(1);
+	}
+
+	if (!preset.requiresApiKey) {
+		const baseUrl = await p.text({
+			message: `${preset.displayName} base URL?`,
+			placeholder: preset.defaultBaseUrl,
+			initialValue: preset.defaultBaseUrl,
+			validate: (v) => (v?.startsWith('http') ? undefined : 'Must start with http(s)://'),
+		});
+		if (p.isCancel(baseUrl)) return null;
+		const model = await p.text({
+			message: 'Model?',
+			placeholder: preset.defaultEmbedModel,
+			initialValue: preset.defaultEmbedModel,
+		});
+		if (p.isCancel(model)) return null;
+		return {
+			provider: provider as GrottoConfig['embed']['provider'],
+			model: model as string,
+			baseUrl: baseUrl as string,
+		};
+	}
+
+	const baseUrl = await p.text({
+		message: 'API base URL? (leave empty for default)',
+		placeholder: preset.defaultBaseUrl ?? 'https://...',
+		validate: () => undefined,
+	});
+	if (p.isCancel(baseUrl)) return null;
+
+	const envKey = pickEnvKey(preset.envVars);
+	let apiKey: string;
+	if (envKey) {
+		p.log.info(`Using API key from environment (${envKey.slice(0, 7)}…)`);
+		apiKey = envKey;
+	} else {
+		const entered = await p.password({
+			message: `API key for ${preset.displayName}? (or set ${preset.envVars?.[0] ?? 'GROTTO_API_KEY'} in your shell)`,
+			validate: (v) => (v ? undefined : 'Required'),
+		});
+		if (p.isCancel(entered)) return null;
+		apiKey = entered as string;
+	}
+
+	const model = await p.text({
+		message: 'Model?',
+		placeholder: preset.defaultEmbedModel,
+		initialValue: preset.defaultEmbedModel,
+	});
+	if (p.isCancel(model)) return null;
+
+	return {
+		provider: provider as GrottoConfig['embed']['provider'],
+		model: model as string,
+		baseUrl: (baseUrl as string) || undefined,
+		apiKey,
+	};
+}
+
+function pickEnvKey(envVars: string[] | undefined): string | undefined {
+	if (process.env.GROTTO_API_KEY) return process.env.GROTTO_API_KEY;
+	if (process.env.OPENAI_API_KEY) return process.env.OPENAI_API_KEY;
+	if (!envVars) return undefined;
+	for (const v of envVars) {
+		const value = process.env[v];
+		if (value) return value;
+	}
+	return undefined;
 }

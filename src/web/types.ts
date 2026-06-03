@@ -3,11 +3,51 @@
  * Mirrors src/core/config.ts and src/server/index.ts.
  */
 
+/**
+ * LLM provider names grotto supports. Mirrors the keys in
+ * src/providers/presets.ts → LLM_PRESETS. Kept as a string union so the
+ * web UI's type-checker catches typos when we use a provider in a string
+ * literal.
+ */
+export type LlmProviderName =
+	| 'openai'
+	| 'openai-compatible'
+	| 'openrouter'
+	| 'anthropic'
+	| 'groq'
+	| 'together'
+	| 'mistral'
+	| 'xai'
+	| 'deepseek'
+	| 'fireworks'
+	| 'perplexity'
+	| 'cohere'
+	| 'ollama'
+	| 'ollama-cloud'
+	| 'lmstudio'
+	| 'llamacpp';
+
+/** Embed provider names grotto supports. */
+export type EmbedProviderName =
+	| 'openai'
+	| 'openai-compatible'
+	| 'openrouter'
+	| 'voyage'
+	| 'cohere'
+	| 'mistral'
+	| 'jina'
+	| 'nomic'
+	| 'together'
+	| 'ollama'
+	| 'ollama-cloud'
+	| 'lmstudio'
+	| 'llamacpp';
+
 export interface MaskedConfig {
 	version: number;
 	notes: { paths: string[]; ignore: string[] };
-	embed: { provider: string; model: string; baseUrl?: string; apiKey?: string };
-	llm: { provider: 'ollama' | 'openai'; model: string; baseUrl?: string; apiKey?: string };
+	embed: { provider: EmbedProviderName | string; model: string; baseUrl?: string; apiKey?: string };
+	llm: { provider: LlmProviderName | string; model: string; baseUrl?: string; apiKey?: string };
 	chat: { topK: number; temperature: number; systemPrompt?: string };
 }
 

@@ -4,7 +4,38 @@ import { z } from 'zod';
 import { paths, ensureDirs } from '../util/paths.js';
 import { log } from '../util/logger.js';
 
-const Provider = z.enum(['ollama', 'openai']);
+/**
+ * Provider enum. We allow every named provider for both [llm] and [embed]
+ * — the factory in providers/llm/index.ts and providers/embed/index.ts
+ * validates whether a given name is actually supported for that role and
+ * throws a helpful error if not.
+ */
+const Provider = z.enum([
+	// LLM + embed (OpenAI-compatible)
+	'openai',
+	'openai-compatible',
+	'openrouter',
+	// LLM + embed (Anthropic is LLM-only; OpenAI-compat handles Cohere)
+	'anthropic',
+	// LLM + embed
+	'groq',
+	'together',
+	'mistral',
+	'xai',
+	'deepseek',
+	'fireworks',
+	'perplexity',
+	'cohere',
+	// Local / self-hosted
+	'ollama',
+	'ollama-cloud',
+	'lmstudio',
+	'llamacpp',
+	// Embed-only
+	'voyage',
+	'jina',
+	'nomic',
+]);
 
 const Notes = z.object({
 	paths: z.array(z.string()).default([]),

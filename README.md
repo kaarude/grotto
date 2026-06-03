@@ -53,13 +53,13 @@ paths = ["/Users/you/Documents/notes"]
 ignore = ["**/node_modules/**", "**/.git/**"]
 
 [embed]
-provider = "openai"               # or "ollama"
+provider = "openai"               # or any of the embed providers below
 model = "text-embedding-3-small"
 # baseUrl = "https://api.openai.com/v1"  # optional, for OpenAI-compatible
 # apiKey = "sk-..."               # optional — prefer $OPENAI_API_KEY
 
 [llm]
-provider = "openai"               # or "ollama"
+provider = "openai"               # or any of the LLM providers below
 model = "gpt-4o-mini"
 # baseUrl = "https://api.openai.com/v1"
 # apiKey = "sk-..."               # optional — prefer $OPENAI_API_KEY
@@ -69,49 +69,99 @@ topK = 5                          # chunks to retrieve per question
 temperature = 0.3
 ```
 
-**API key resolution order** (for OpenAI-compatible providers):
-1. `process.env.GROTTO_API_KEY`
-2. `process.env.OPENAI_API_KEY`
-3. `apiKey` field in TOML
+**API key resolution order** (for any provider that needs a key):
+
+1. `process.env.GROTTO_API_KEY` (universal override)
+2. `process.env.OPENAI_API_KEY` (back-compat)
+3. Provider-specific env var (e.g. `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY`, `GROQ_API_KEY`, …)
+4. `apiKey` field in TOML
 
 Edit interactively with `grotto config edit` (opens `$EDITOR`).
 
 ## Commands
 
-| Command | What it does |
-|---|---|
-| `grotto init` | First-time setup |
-| `grotto add [path]` | Index notes (optionally `--watch`) |
-| `grotto chat` | Interactive chat with your notes |
-| `grotto list` | Show indexed collections |
-| `grotto web` | Open the local web UI (optional) |
-| `grotto config show` | Print current config (keys masked) |
-| `grotto config path` | Print config file path |
-| `grotto config edit` | Open config in `$EDITOR` |
-| `grotto config validate` | Validate current config |
+| Command                  | What it does                       |
+| ------------------------ | ---------------------------------- |
+| `grotto init`            | First-time setup                   |
+| `grotto add [path]`      | Index notes (optionally `--watch`) |
+| `grotto chat`            | Interactive chat with your notes   |
+| `grotto list`            | Show indexed collections           |
+| `grotto web`             | Open the local web UI (optional)   |
+| `grotto config show`     | Print current config (keys masked) |
+| `grotto config path`     | Print config file path             |
+| `grotto config edit`     | Open config in `$EDITOR`           |
+| `grotto config validate` | Validate current config            |
 
 ## Provider matrix
 
-| Provider | Embeddings | LLM | Notes |
-|---|---|---|---|
-| **OpenAI** | ✅ `text-embedding-3-*` | ✅ `gpt-4o*`, `gpt-4*`, `o1*` | Default · BYOK |
-| **OpenRouter** | ✅ | ✅ 100+ models | BYOK · OpenAI-compatible |
-| **Groq** | — | ✅ fast inference | BYOK |
-| **Together** | ✅ | ✅ | BYOK |
-| **LM Studio** | ✅ | ✅ | Local · OpenAI-compatible |
-| **llama.cpp server** | ✅ | ✅ | Local · OpenAI-compatible |
-| **Ollama** | ✅ `nomic-embed-text` | ✅ any chat model | Local · free · private |
+### LLM
 
-Anywhere that speaks the OpenAI API works. Set the `baseUrl`.
+| Provider              | Protocol      | Default model                       | Notes                        |
+| --------------------- | ------------- | ----------------------------------- | ---------------------------- |
+| **OpenAI**            | OpenAI-compat | `gpt-4o-mini`                       | Default · BYOK               |
+| **OpenRouter**        | OpenAI-compat | `anthropic/claude-3.5-sonnet`       | 100+ models · one key        |
+| **Anthropic**         | native        | `claude-3-5-sonnet-latest`          | Claude via the Messages API  |
+| **Groq**              | OpenAI-compat | `llama-3.1-70b-versatile`           | Very fast LPU inference      |
+| **Together AI**       | OpenAI-compat | `Meta-Llama-3.1-70B-Instruct-Turbo` | Open models                  |
+| **Mistral**           | OpenAI-compat | `mistral-large-latest`              | Mistral's first-party models |
+| **xAI (Grok)**        | OpenAI-compat | `grok-2-latest`                     | xAI's Grok                   |
+| **DeepSeek**          | OpenAI-compat | `deepseek-chat`                     | Reasoning + chat             |
+| **Fireworks AI**      | OpenAI-compat | `llama-v3p1-70b-instruct`           | Fast open models             |
+| **Perplexity**        | OpenAI-compat | `sonar-pro`                         | Web-grounded answers         |
+| **Cohere**            | OpenAI-compat | `command-r-plus`                    | Cohere's models              |
+| **Ollama**            | native        | `llama3.1:8b`                       | Local · free · private       |
+| **Ollama Cloud**      | native        | `llama3.1:8b`                       | Hosted Ollama                |
+| **LM Studio**         | OpenAI-compat | `local-model`                       | Local · GUI                  |
+| **llama.cpp server**  | OpenAI-compat | `local-model`                       | Local · CLI                  |
+| **OpenAI-compatible** | OpenAI-compat | `gpt-4o-mini`                       | Any custom base URL          |
+
+### Embeddings
+
+| Provider              | Protocol      | Default model                          | Notes                                |
+| --------------------- | ------------- | -------------------------------------- | ------------------------------------ |
+| **OpenAI**            | OpenAI-compat | `text-embedding-3-small`               | Default · BYOK                       |
+| **OpenRouter**        | OpenAI-compat | `openai/text-embedding-3-small`        | Many embed models via one key        |
+| **Voyage AI**         | OpenAI-compat | `voyage-3`                             | Best-in-class for RAG                |
+| **Cohere**            | native        | `embed-english-v3.0`                   | Native `/v1/embed` (different shape) |
+| **Mistral**           | OpenAI-compat | `mistral-embed`                        | One strong model                     |
+| **Jina AI**           | OpenAI-compat | `jina-embeddings-v3`                   | Multilingual                         |
+| **Nomic Atlas**       | OpenAI-compat | `nomic-embed-text-v1.5`                | Open weights                         |
+| **Together AI**       | OpenAI-compat | `m2-bert-80M-8k-retrieval`             | Open embed models                    |
+| **Ollama**            | native        | `nomic-embed-text`                     | Local · free                         |
+| **Ollama Cloud**      | native        | `nomic-embed-text`                     | Hosted Ollama                        |
+| **LM Studio**         | OpenAI-compat | `text-embedding-nomic-embed-text-v1.5` | Local · GUI                          |
+| **llama.cpp server**  | OpenAI-compat | `local-model`                          | Local · CLI                          |
+| **OpenAI-compatible** | OpenAI-compat | `text-embedding-3-small`               | Any custom base URL                  |
+
+### Provider-specific env vars
+
+| Provider     | Env var(s)                                 |
+| ------------ | ------------------------------------------ |
+| Anthropic    | `ANTHROPIC_API_KEY`                        |
+| OpenRouter   | `OPENROUTER_API_KEY`                       |
+| Groq         | `GROQ_API_KEY`                             |
+| Together     | `TOGETHER_API_KEY`                         |
+| Mistral      | `MISTRAL_API_KEY`                          |
+| xAI          | `XAI_API_KEY` or `GROK_API_KEY`            |
+| DeepSeek     | `DEEPSEEK_API_KEY`                         |
+| Fireworks    | `FIREWORKS_API_KEY`                        |
+| Perplexity   | `PERPLEXITY_API_KEY` or `PPLX_API_KEY`     |
+| Cohere       | `COHERE_API_KEY` or `CO_API_KEY`           |
+| Ollama Cloud | `OLLAMA_API_KEY` or `OLLAMA_CLOUD_API_KEY` |
+| Voyage       | `VOYAGE_API_KEY`                           |
+| Jina         | `JINA_API_KEY`                             |
+| Nomic        | `NOMIC_API_KEY`                            |
+
+Anywhere that speaks the OpenAI API also works through `provider = "openai-compatible"` with a custom `baseUrl`.
 
 ## Cloud vs local
 
-| | Cloud (default) | Ollama |
-|---|---|---|
-| Cost | Pay per token | Free |
-| Speed | Fast, scalable | Depends on your hardware |
-| Privacy | Your data hits the API | Stays on your machine |
-| Setup | Just an API key | Install + download a model |
+|         | Cloud (default)        | Ollama                     |
+| ------- | ---------------------- | -------------------------- |
+| Cost    | Pay per token          | Free                       |
+| Speed   | Fast, scalable         | Depends on your hardware   |
+| Privacy | Your data hits the API | Stays on your machine      |
+| Setup   | Just an API key        | Install + download a model |
 
 Grotto makes the switch a one-line config change.
 
@@ -121,12 +171,13 @@ Grotto makes the switch a one-line config change.
 src/
 ├── cli/         # commander entry, commands, Ink TUI (v0.4)
 ├── core/        # config, ingest, retrieve, chat, store (LanceDB)
-├── providers/   # LLM + embed backends (Ollama, OpenAI-compatible)
+├── providers/   # LLM + embed backends (Ollama, Anthropic, OpenAI-compatible)
+│   └── presets.ts  # the single source of truth for provider defaults
 ├── parsers/     # markdown, pdf, text
 └── util/        # paths, logger
 ```
 
-All providers are behind small interfaces. Adding a new backend = one file.
+All providers are behind small interfaces. Adding a new OpenAI-compatible provider = one entry in `src/providers/presets.ts`. Adding a new provider with a genuinely different API (like Anthropic) = one file in `src/providers/llm/` + one entry in the presets.
 
 ## License
 
